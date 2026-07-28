@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Local data
+database/*.db
+database/*.db-*
+data/cache/*
+data/exports/*
+data/logos/*
+!data/cache/.gitkeep
+!data/exports/.gitkeep
+!data/logos/.gitkeep
+
+# Editors and OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

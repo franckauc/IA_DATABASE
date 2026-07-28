@@ -1,0 +1,2 @@
+# Les dépendances seront ajoutées avec les fonctionnalités.
+# Outils de développement : py -m pip install -e ".[dev]"
