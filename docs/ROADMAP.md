@@ -8,9 +8,9 @@
 
 ## v0.2 — Base et données de référence
 
-- catégories et plateformes initiales ;
-- commandes de création, recherche et validation ;
-- exports JSON et CSV.
+- [x] catégories et plateformes initiales ;
+- [x] jeu de fiches initiales avec URLs et sources officielles ;
+- [x] commandes de création, recherche et export CSV/JSON.
 
 ## v0.3 — Collecteurs autorisés
 

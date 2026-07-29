@@ -18,6 +18,32 @@ py -m pytest
 
 La commande crée `database/ai_catalog.db` depuis le schéma versionné. Cette base locale n'est pas versionnée.
 
+## Utiliser le catalogue v0.2
+
+Installe le projet en mode local, puis charge les données de démarrage :
+
+```powershell
+py -m pip install -e ".[dev]"
+py -m ia_database seed
+py -m ia_database stats
+```
+
+Quelques commandes utiles :
+
+```powershell
+# Rechercher par nom ou description
+py -m ia_database search ollama
+
+# Voir les outils de programmation
+py -m ia_database search --category programmation
+
+# Exporter le catalogue
+py -m ia_database export --format csv
+py -m ia_database export --format json
+```
+
+Les exports sont écrits dans `data/exports/`. Le jeu initial contient une sélection de plateformes connues, leurs liens officiels et leur provenance ; il est conçu comme point de départ, pas comme un annuaire exhaustif.
+
 ## Principes
 
 - Toute information importée conserve sa source et sa date de récupération.

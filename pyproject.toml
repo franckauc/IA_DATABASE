@@ -12,6 +12,9 @@ license = { file = "LICENSE" }
 authors = [{ name = "Franck Auc" }]
 dependencies = []
 
+[project.scripts]
+ia-database = "ia_database.cli:main"
+
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "ruff>=0.6"]
 
