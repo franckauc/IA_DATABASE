@@ -16,3 +16,4 @@ jobs:
       - run: python scripts/init_database.py
       - run: python -m pytest
       - run: python -m ruff check .
+      - run: python -m pip_audit --strict

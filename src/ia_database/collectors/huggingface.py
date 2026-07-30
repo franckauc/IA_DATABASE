@@ -104,7 +104,7 @@ def _iter_pages(headers: dict[str, str] | None, verify: bool):
             try:
                 response = http_get(url, params=params, headers=headers, verify=verify)
                 break
-            except Exception as error:  # noqa: BLE001
+            except Exception as error:
                 status = getattr(getattr(error, "response", None), "status_code", None)
                 if status == 429 and attempt < 2:
                     time.sleep(2**attempt * 2)

@@ -5,7 +5,6 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 DATABASE_PATH = ROOT / "database" / "ai_catalog.db"
 SCHEMA_PATH = ROOT / "database" / "schema.sql"

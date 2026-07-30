@@ -7,8 +7,8 @@ import csv
 import json
 import sqlite3
 import sys
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence
 
 from ia_database.database import connect, default_database_path, initialize_database, seed_database
 from ia_database.exporters.xlsx import export_workbook
@@ -30,6 +30,17 @@ SORT_ORDERINGS = {
 }
 
 
+def _connect_readonly(path: Path) -> sqlite3.Connection:
+    """Ouvre la base en lecture seule au niveau SQLite (`mode=ro`).
+
+    Utilisé par les consommateurs qui ne doivent jamais écrire (ex. le
+    serveur web local) : même un bug applicatif ne peut pas y modifier la
+    base, la connexion refuse toute écriture au niveau du moteur.
+    """
+    uri = f"file:{Path(path).resolve().as_posix()}?mode=ro"
+    return sqlite3.connect(uri, uri=True)
+
+
 def query_rows(
     path: Path,
     term: str,
@@ -37,6 +48,7 @@ def query_rows(
     tag: str | None,
     limit: int,
     sort: str = "name",
+    read_only: bool = False,
 ) -> list[dict[str, object]]:
     """Recherche les fiches par nom, description, catégorie ou tag."""
     filters = ["(LOWER(item.name) LIKE :term OR LOWER(COALESCE(item.description, '')) LIKE :term)"]
@@ -83,7 +95,8 @@ def query_rows(
         ORDER BY {order_by}
         LIMIT :limit
     """
-    with sqlite3.connect(path) as connection:
+    connection = _connect_readonly(path) if read_only else sqlite3.connect(path)
+    with connection:
         connection.row_factory = sqlite3.Row
         return [dict(row) for row in connection.execute(sql, parameters)]
 

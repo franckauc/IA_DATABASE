@@ -13,8 +13,20 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
-from ia_database.cli import query_rows
+from ia_database.cli import _connect_readonly, query_rows
 from ia_database.icons import favicon_url
+
+# Schémas autorisés pour les liens cliquables. Défense en profondeur : même si
+# les collecteurs ne produisent que du http(s) aujourd'hui, on refuse de
+# transformer un official_url en lien cliquable s'il change un jour de forme
+# (ex. javascript:, data:) — quelle qu'en soit la source.
+SAFE_URL_SCHEMES = {"http", "https"}
+
+
+def _safe_link(url: str | None) -> str | None:
+    if not url:
+        return None
+    return url if urlsplit(url).scheme in SAFE_URL_SCHEMES else None
 
 PAGE_STYLE = """
 body { font-family: system-ui, sans-serif; margin: 2rem; color: #1a1a1a; background: #fafafa; }
@@ -63,11 +75,13 @@ def _sort_select_html(sort: str) -> str:
 
 
 def render_page(database_path: Path, term: str, category: str, tag: str, sort: str = "name") -> str:
-    with sqlite3.connect(database_path) as connection:
+    with _connect_readonly(database_path) as connection:
         categories = _fetch_options(connection, "categories")
         tags = _fetch_options(connection, "tags")
 
-    rows = query_rows(database_path, term, category or None, tag or None, limit=200, sort=sort)
+    rows = query_rows(
+        database_path, term, category or None, tag or None, limit=200, sort=sort, read_only=True
+    )
 
     result_rows = []
     for row in rows:
@@ -85,9 +99,10 @@ def render_page(database_path: Path, term: str, category: str, tag: str, sort: s
             for name in (row["categories"] or "").split(",")
             if name
         )
-        link = html.escape(row["official_url"] or "")
+        safe_url = _safe_link(row["official_url"])
+        link = html.escape(safe_url or "")
         name = html.escape(row["name"])
-        favicon = favicon_url(row["official_url"], size=32)
+        favicon = favicon_url(safe_url, size=32)
         # onerror : si le favicon distant ne charge pas (réseau filtré, TLS
         # intercepté...), on masque l'image cassée plutôt que de l'afficher.
         icon_html = (
@@ -139,9 +154,28 @@ def render_page(database_path: Path, term: str, category: str, tag: str, sort: s
 """
 
 
+# CSP permissive uniquement là où le HTML existant en a besoin (style et
+# gestionnaires onerror en ligne, favicons servis par Google) ; tout le reste
+# (scripts distants, frames, plugins) reste bloqué.
+CONTENT_SECURITY_POLICY = (
+    "default-src 'self'; "
+    "img-src 'self' https://www.google.com; "
+    "style-src 'unsafe-inline'; "
+    "script-src 'unsafe-inline'; "
+    "object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
+)
+
+SECURITY_HEADERS = {
+    "Content-Security-Policy": CONTENT_SECURITY_POLICY,
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "no-referrer",
+}
+
+
 def _make_handler(database_path: Path) -> type[BaseHTTPRequestHandler]:
     class Handler(BaseHTTPRequestHandler):
-        def do_GET(self) -> None:  # noqa: N802 - imposé par http.server
+        def do_GET(self) -> None:
             parsed = urlsplit(self.path)
             if parsed.path not in ("/", ""):
                 self.send_response(404)
@@ -156,10 +190,12 @@ def _make_handler(database_path: Path) -> type[BaseHTTPRequestHandler]:
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
+            for header, value in SECURITY_HEADERS.items():
+                self.send_header(header, value)
             self.end_headers()
             self.wfile.write(body)
 
-        def log_message(self, format: str, *args: object) -> None:  # noqa: A002 - signature imposée
+        def log_message(self, format: str, *args: object) -> None:
             print(f"[serve] {self.address_string()} {format % args}")
 
     return Handler
