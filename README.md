@@ -4,6 +4,9 @@ Catalogue local, extensible et sourcé des outils, modèles et services d'intell
 
 Le projet commence par une base SQLite locale. Les futurs collecteurs importeront uniquement des données accessibles via API ou sous des conditions de réutilisation compatibles.
 
+**Consulter le catalogue en ligne, sans rien installer : https://franckauc.github.io/IA_DATABASE/**
+(tableau interactif — recherche, tri, filtre par type ; données brutes aussi disponibles en [CSV](data/exports/catalogue_ia.csv) et [JSON](data/exports/catalogue_ia.json))
+
 ## Démarrage rapide
 
 Prérequis : Python 3.11 ou plus récent, installé et accessible via le lanceur `py`.
