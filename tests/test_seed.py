@@ -21,7 +21,11 @@ def test_seed_is_idempotent_and_keeps_sources(tmp_path: Path) -> None:
         local_count = connection.execute(
             "SELECT COUNT(*) FROM catalog_items WHERE works_offline = 1"
         ).fetchone()[0]
+        item_tag_count = connection.execute("SELECT COUNT(*) FROM item_tags").fetchone()[0]
+        item_license_count = connection.execute("SELECT COUNT(*) FROM item_licenses").fetchone()[0]
 
-    assert item_count == 16
+    assert item_count == 51
     assert source_count == item_count
     assert local_count >= 4
+    assert item_tag_count > 0
+    assert item_license_count > 0

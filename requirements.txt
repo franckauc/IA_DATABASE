@@ -1,2 +1,6 @@
-# Les dépendances seront ajoutées avec les fonctionnalités.
+# Dépendances d'exécution.
+requests>=2.31
+openpyxl>=3.1
+Pillow>=10
+
 # Outils de développement : py -m pip install -e ".[dev]"

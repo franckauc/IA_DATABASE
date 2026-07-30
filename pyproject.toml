@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ia-database"
-version = "0.1.0"
+version = "0.3.0"
 description = "Catalogue local et sourcé d'outils et modèles IA"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { file = "LICENSE" }
 authors = [{ name = "Franck Auc" }]
-dependencies = []
+dependencies = ["requests>=2.31", "openpyxl>=3.1", "Pillow>=10"]
 
 [project.scripts]
 ia-database = "ia_database.cli:main"

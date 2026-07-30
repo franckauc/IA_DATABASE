@@ -29,6 +29,8 @@ CREATE TABLE IF NOT EXISTS catalog_items (
     works_offline INTEGER NOT NULL DEFAULT 0 CHECK (works_offline IN (0, 1)),
     api_available INTEGER NOT NULL DEFAULT 0 CHECK (api_available IN (0, 1)),
     status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'archived', 'unknown')),
+    downloads INTEGER CHECK (downloads >= 0),
+    likes INTEGER CHECK (likes >= 0),
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -130,5 +132,9 @@ CREATE TABLE IF NOT EXISTS item_history (
 CREATE INDEX IF NOT EXISTS idx_catalog_items_name ON catalog_items(name);
 CREATE INDEX IF NOT EXISTS idx_catalog_items_type ON catalog_items(item_type);
 CREATE INDEX IF NOT EXISTS idx_source_records_item ON source_records(item_id);
+-- L'index sur catalog_items(downloads) est créé par database.py, après la
+-- migration qui ajoute cette colonne aux bases créées avant son introduction :
+-- CREATE INDEX IF NOT EXISTS s'exécuterait ici avant que la colonne existe.
 
 INSERT OR IGNORE INTO schema_version(version) VALUES (1);
+INSERT OR IGNORE INTO schema_version(version) VALUES (2);
