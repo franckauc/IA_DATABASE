@@ -1,0 +1,66 @@
+name: Update catalog exports
+
+# Régénère data/exports/catalogue_ia.{csv,json} depuis les sources publiques
+# (Hugging Face, OpenRouter) et republie sur main si le contenu a changé, pour
+# que les exports lisibles depuis GitHub restent à jour sans intervention
+# manuelle. Ollama n'est pas collecté ici : c'est une API locale, absente des
+# runners GitHub.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # chaque lundi 06:00 UTC
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Nombre max de fiches par source (0 = sans limite)"
+        default: "0"
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-catalog
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: python -m pip install -e .
+
+      - name: Construire la base depuis le schéma et le seed
+        run: |
+          python -m ia_database init
+          python -m ia_database seed
+
+      - name: Collecter les sources publiques
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          LIMIT="${{ github.event.inputs.limit || '0' }}"
+          python -m ia_database collect huggingface --limit "$LIMIT"
+          python -m ia_database collect openrouter --limit "$LIMIT"
+
+      - name: Exporter CSV et JSON
+        run: |
+          python -m ia_database export --format csv
+          python -m ia_database export --format json
+
+      - name: Publier si le contenu a changé
+        run: |
+          if git diff --quiet -- data/exports/catalogue_ia.csv data/exports/catalogue_ia.json; then
+            echo "Aucun changement, rien à publier."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/exports/catalogue_ia.csv data/exports/catalogue_ia.json
+          git commit -m "chore: refresh catalog exports [skip ci]"
+          git push
